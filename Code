@@ -1,0 +1,214 @@
+import math
+import random
+
+class Card:
+    """Represents a playing card"""
+
+    def __init__(self, suit, rank):
+        self.suit=suit
+        self.rank=rank
+
+    suit_names=['Clubs', 'Diamonds', 'Hearts', 'Spades']
+    rank_names=[None, 'Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King']
+    
+    def __str__(self):
+        return '%s of %s' % (Card.rank_names[self.rank],Card.suit_names[self.suit])
+
+    def __lt__(self, other):
+        if self.rank<other.rank:
+            return True
+        else:
+            return False
+
+
+
+class Deck:
+    """Represents a deck of cards"""
+
+    def __init__(self):
+        self.cards=[]
+        for suit in range(4):
+            for rank in range(1,14):
+                card=Card(suit, rank)
+                self.cards.append(card)
+
+    def __str__(self):
+        res=[]
+        for card in self.cards:
+            res.append(str(card))
+        return '\n' .join(res)
+        
+
+    def __len__(self):
+        j=0
+        for i in self.cards:
+            j+=1
+        return j
+
+    def __iter__(self):
+        return iter(self.cards)
+
+    def __getitem__(self,i=0):
+        return self.cards[i]
+
+    def __setitem__(self,i,card):
+        self.cards[i] = card
+
+    def pop_card(self):
+        return self.cards.pop()
+
+    def add_card(self,card):
+        self.cards.append(card)
+    
+    def shuffle(self):
+        random.shuffle(self.cards)
+
+    def deal(self,hand,number):
+        for i in range(number):
+            card=self.pop_card()
+            hand.add_card(card)
+
+    def empty(self):
+        if len(self.cards)==0:
+            return True
+        else:
+            return False
+
+    def sortrank(self,i=1):
+        if i+1>len(self):
+            return
+        if self[i]<self[i-1]:
+            temp=self[i]
+            self[i]=self[i-1]
+            self[i-1]=temp
+            if i==1:
+                return self.sortrank(i+1)
+            return self.sortrank(i-1)
+        else:
+            return self.sortrank(i+1)
+
+    def dictrs(self):
+        d=dict()
+        for card in self:
+            if card.rank not in d:
+                d[card.rank]=1
+            else:
+                d[card.rank]+=1
+        return d
+
+    def dictsr(self):
+        d=dict()
+        for card in self:
+            if card.suit not in d:
+                d[card.suit]=1
+            else:
+                d[card.suit]+=1
+        return d
+        
+
+    def onebigger(self,i,j):
+        if self[i].rank==self[j].rank-1:
+            return True
+        elif self[j].rank+1==13 and self[i].rank==1:
+            return True
+        else:
+            return False
+
+
+class Hand(Deck):
+    """Represents a hand of playing cards"""
+
+    def __init__(self):
+        self.cards=[]
+    
+    def move_cards(self, hand, num):
+        for i in range(num):
+            hand.add_card(self.pop_cards())
+
+    def straightcheck(self,i):
+        if (self.onebigger(i,i+1)
+        and self.onebigger(i,i+2)
+        and self.onebigger(i,i+3)
+        and self.onebigger(i,i+4))==True:
+            return True
+        else:
+            return False
+
+    def score(self):
+        Straight=Flush=Pair=FullHouse=ThreeOfAKind=FourOfAKind=TwoPair=False
+        self.sortrank()
+        rs=self.dictrs()
+        sr=self.dictsr()
+        if self.straightcheck(0)==True:
+            Straight=True
+        for key in sr:
+            if sr[key]==5:
+                if Straight==True:
+                    return 'Straight Flush'
+                Flush=True
+        for key in rs:
+            if rs[key]==2:
+                if Pair==True:
+                    TwoPair==True
+                Pair=True
+                if ThreeOfAKind==True:
+                    FullHouse=True
+            if rs[key]==3:
+                ThreeOfAKind=True
+                if Pair==True:
+                    FullHouse=True
+            if rs[key]==4:
+                FourOfAKind=True
+        if FourOfAKind==True:
+            return 'Four Of A Kind'
+        if FullHouse==True:
+            return 'Full House'
+        if Flush==True:
+            return 'Flush'
+        if Straight==True:
+            return 'Straight'
+        if ThreeOfAKind==True:
+            return 'Three Of A Kind'
+        if TwoPair==True:
+            return 'Two Pair'
+        if Pair==True:
+            return 'Pair'
+
+
+
+def multi(n):
+    S=[]
+    D=Deck()
+    D.shuffle()
+    for i in range(n):
+        H=Hand()
+        if len(D)<5:
+            D=Deck()
+            D.shuffle()
+        D.deal(H,5)
+        S.append(H.score())
+    return S
+            
+
+
+def Hist(s):
+    d=dict()
+    for c in s:
+        if c not in d:
+            d[c]=1
+        else:
+            d[c]+=1
+    return d
+
+def probhist(s,n):
+    d=dict()
+    for key in s:
+        d[key]=s[key]/n
+    return d
+
+def printneathist(s):
+    for key in s:
+        print(key,': ',s[key])
+
+n=100000
+printneathist(probhist(Hist(multi(n)),n))
